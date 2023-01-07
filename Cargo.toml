@@ -7,5 +7,5 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.0.32", features = ["derive"] }
-#rxing = "0.2.6"
-rxing = {path = "../j2rust/rxing" }
+rxing = "0.2.7"
+#rxing = {path = "../j2rust/rxing" }
