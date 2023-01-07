@@ -6,4 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rxing = "0.2.6"
+clap = { version = "4.0.32", features = ["derive"] }
+#rxing = "0.2.6"
+rxing = {path = "../j2rust/rxing" }
