@@ -23,6 +23,50 @@ enum Commands {
         decode_multi: bool,
         #[arg(short, long, value_enum)]
         barcode_types: Option<Vec<BarcodeFormat>>,
+
+        /// Unspecified, application-specific hint.
+        #[arg(long)]
+        other: Option<String>,
+
+        /// Image is a pure monochrome image of a barcode.
+        #[arg(long)]
+        pure_barcode: Option<bool>,
+
+        /// Specifies what character encoding to use when decoding, where applicable.
+        #[arg(long)]
+        character_set: Option<String>,
+
+        /// Allowed lengths of encoded data -- reject anything else..
+        #[arg(long)]
+        allowed_lengths: Option<Vec<u32>>,
+
+        /// Assume Code 39 codes employ a check digit.
+        #[arg(long)]
+        assume_code_39_check_digit: Option<bool>,
+
+        /// Assume the barcode is being processed as a GS1 barcode, and modify behavior as needed.
+        /// For example this affects FNC1 handling for Code 128 (aka GS1-128).
+        #[arg(long, verbatim_doc_comment)]
+        assume_gs1: Option<bool>,
+
+        /// If true, return the start and end digits in a Codabar barcode instead of stripping them. They
+        /// are alpha, whereas the rest are numeric. By default, they are stripped, but this causes them
+        /// to not be.
+        #[arg(long, verbatim_doc_comment)]
+        return_codabar_start_end: Option<bool>,
+
+        /// Allowed extension lengths for EAN or UPC barcodes. Other formats will ignore this.
+        /// Maps to an {@code int[]} of the allowed extension lengths, for example [2], [5], or [2, 5].
+        /// If it is optional to have an extension, do not set this hint. If this is set,
+        /// and a UPC or EAN barcode is found but an extension is not, then no result will be returned
+        /// at all.
+        #[arg(long, verbatim_doc_comment)]
+        allowed_ean_extensions: Option<Vec<u32>>,
+
+        /// If true, also tries to decode as inverted image. All configured decoders are simply called a
+        /// second time with an inverted image.
+        #[arg(long, verbatim_doc_comment)]
+        also_inverted: Option<bool>,
     },
     #[command(group(
         ArgGroup::new("code_set_rules")
@@ -167,7 +211,30 @@ fn main() {
             try_harder,
             decode_multi,
             barcode_types,
-        } => decode_command(&cli.file_name, try_harder, decode_multi, barcode_types),
+            other,
+            pure_barcode,
+            character_set,
+            allowed_lengths,
+            assume_code_39_check_digit,
+            assume_gs1,
+            return_codabar_start_end,
+            allowed_ean_extensions,
+            also_inverted,
+        } => decode_command(
+            &cli.file_name,
+            try_harder,
+            decode_multi,
+            barcode_types,
+            other,
+            pure_barcode,
+            character_set,
+            allowed_lengths,
+            assume_code_39_check_digit,
+            assume_gs1,
+            return_codabar_start_end,
+            allowed_ean_extensions,
+            also_inverted,
+        ),
         Commands::Encode {
             barcode_type,
             width,
@@ -220,12 +287,77 @@ fn decode_command(
     try_harder: &bool,
     decode_multi: &bool,
     barcode_types: &Option<Vec<BarcodeFormat>>,
+    other: &Option<String>,
+    pure_barcode: &Option<bool>,
+    character_set: &Option<String>,
+    allowed_lengths: &Option<Vec<u32>>,
+    assume_code_39_check_digit: &Option<bool>,
+    assume_gs1: &Option<bool>,
+    return_codabar_start_end: &Option<bool>,
+    allowed_ean_extensions: &Option<Vec<u32>>,
+    also_inverted: &Option<bool>,
 ) {
+    let mut hints: rxing::DecodingHintDictionary = HashMap::new();
+    if let Some(other) = other {
+        hints.insert(
+            rxing::DecodeHintType::OTHER,
+            rxing::DecodeHintValue::Other(other.to_owned()),
+        );
+    }
+    if let Some(pure_barcode) = pure_barcode {
+        hints.insert(
+            rxing::DecodeHintType::PURE_BARCODE,
+            rxing::DecodeHintValue::PureBarcode(*pure_barcode),
+        );
+    }
+    if let Some(character_set) = character_set {
+        hints.insert(
+            rxing::DecodeHintType::CHARACTER_SET,
+            rxing::DecodeHintValue::CharacterSet(character_set.to_owned()),
+        );
+    }
+    if let Some(allowed_lengths) = allowed_lengths {
+        hints.insert(
+            rxing::DecodeHintType::ALLOWED_LENGTHS,
+            rxing::DecodeHintValue::AllowedLengths(allowed_lengths.to_vec()),
+        );
+    }
+    if let Some(assume_code_39_check_digit) = assume_code_39_check_digit {
+        hints.insert(
+            rxing::DecodeHintType::ASSUME_CODE_39_CHECK_DIGIT,
+            rxing::DecodeHintValue::AssumeCode39CheckDigit(*assume_code_39_check_digit),
+        );
+    }
+    if let Some(assume_gs1) = assume_gs1 {
+        hints.insert(
+            rxing::DecodeHintType::ASSUME_GS1,
+            rxing::DecodeHintValue::AssumeGs1(*assume_gs1),
+        );
+    }
+    if let Some(return_codabar_start_end) = return_codabar_start_end {
+        hints.insert(
+            rxing::DecodeHintType::RETURN_CODABAR_START_END,
+            rxing::DecodeHintValue::ReturnCodabarStartEnd(*return_codabar_start_end),
+        );
+    }
+    if let Some(allowed_ean_extensions) = allowed_ean_extensions {
+        hints.insert(
+            rxing::DecodeHintType::ALLOWED_EAN_EXTENSIONS,
+            rxing::DecodeHintValue::AllowedEanExtensions(allowed_ean_extensions.to_vec()),
+        );
+    }
+    if let Some(also_inverted) = also_inverted {
+        hints.insert(
+            rxing::DecodeHintType::ALSO_INVERTED,
+            rxing::DecodeHintValue::AlsoInverted(*also_inverted),
+        );
+    }
+
     println!(
         "Decode '{}' with: try_harder: {}, decode_multi: {}, barcode_types: {:?}",
         file_name, try_harder, decode_multi, barcode_types
     );
-    let mut hints: rxing::DecodingHintDictionary = HashMap::new();
+
     if !try_harder {
         hints.insert(
             rxing::DecodeHintType::TRY_HARDER,
