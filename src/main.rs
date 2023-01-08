@@ -284,35 +284,20 @@ fn encode_command(
     height: &u32,
     data: &Option<String>,
     data_file: &Option<String>,
-
     error_correction: &Option<String>,
-
     character_set: &Option<String>,
-
     data_matrix_compact: &Option<bool>,
-
     margin: &Option<String>,
-
     pdf_417_compact: &Option<bool>,
-
     pdf_417_compaction: &Option<String>,
-
     pdf_417_auto_eci: &Option<bool>,
-
     aztec_layers: &Option<i32>,
-
     qr_version: &Option<String>,
-
     qr_mask_pattern: &Option<String>,
-
     qr_compact: &Option<bool>,
-
     gs1_format: &Option<bool>,
-
     force_code_set: &Option<String>,
-
     force_c40: &Option<bool>,
-
     code_128_compact: &Option<bool>,
 ) {
     // if data.is_none() && data_file.is_none() {
@@ -416,6 +401,7 @@ fn encode_command(
     }
 
     if let Some(qr_compact) = qr_compact {
+        println!("Warning, QRCompact can generate unreadable barcodes");
         hints.insert(
             rxing::EncodeHintType::QR_COMPACT,
             rxing::EncodeHintValue::QrCompact(qr_compact.to_string()),
