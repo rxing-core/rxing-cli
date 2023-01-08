@@ -7,6 +7,7 @@ use clap::{Parser, Subcommand};
 use rxing::{BarcodeFormat, MultiFormatWriter, Writer};
 
 #[derive(Parser)]
+#[command(author, version, about, long_about = None)]
 struct Args {
     file_name: String,
     #[command(subcommand)]
