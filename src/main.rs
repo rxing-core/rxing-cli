@@ -4,7 +4,7 @@ use std::{
 };
 
 use clap::{ArgGroup, Parser, Subcommand};
-use rxing::{BarcodeFormat, EncodingHintDictionary, MultiFormatWriter, Writer};
+use rxing::{BarcodeFormat, MultiFormatWriter, Writer};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
