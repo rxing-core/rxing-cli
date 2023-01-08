@@ -24,6 +24,10 @@ enum Commands {
         #[arg(short, long, value_enum)]
         barcode_types: Option<Vec<BarcodeFormat>>,
 
+        /// Print detailed results data
+        #[arg(long)]
+        detailed_results: bool,
+
         /// Unspecified, application-specific hint.
         #[arg(long)]
         other: Option<String>,
@@ -220,6 +224,7 @@ fn main() {
             return_codabar_start_end,
             allowed_ean_extensions,
             also_inverted,
+            detailed_results,
         } => decode_command(
             &cli.file_name,
             try_harder,
@@ -234,6 +239,7 @@ fn main() {
             return_codabar_start_end,
             allowed_ean_extensions,
             also_inverted,
+            detailed_results,
         ),
         Commands::Encode {
             barcode_type,
@@ -296,6 +302,7 @@ fn decode_command(
     return_codabar_start_end: &Option<bool>,
     allowed_ean_extensions: &Option<Vec<u32>>,
     also_inverted: &Option<bool>,
+    detailed_result: &bool,
 ) {
     let mut hints: rxing::DecodingHintDictionary = HashMap::new();
     if let Some(other) = other {
@@ -379,7 +386,7 @@ fn decode_command(
             Ok(result_array) => {
                 println!("Found {} results", result_array.len());
                 for (i, result) in result_array.into_iter().enumerate() {
-                    println!("Result {}: ({}) {}", i, result.getBarcodeFormat(), result);
+                    println!("Result {}:\n{}", i, print_result(&result, *detailed_result));
                 }
             }
             Err(search_err) => {
@@ -394,9 +401,8 @@ fn decode_command(
         match result {
             Ok(result) => {
                 println!(
-                    "Detection result: \n({}) {}",
-                    result.getBarcodeFormat(),
-                    result
+                    "Detection result: \n{}",
+                    print_result(&result, *detailed_result)
                 );
             }
             Err(search_err) => {
@@ -585,5 +591,13 @@ fn encode_command(
             }
         }
         Err(encode_error) => println!("Couldn't encode: {}", encode_error),
+    }
+}
+
+fn print_result(result: &rxing::RXingResult, detailed: bool) -> String {
+    if detailed {
+        format!("[Barcode Format] {}\n[Metadata] {:?}\n[Points] {:?}\n[Number of Bits] {}\n[Timestamp] {}\n[Data] {}", result.getBarcodeFormat(),result.getRXingResultMetadata(), result.getRXingResultPoints(), result.getNumBits(), result.getTimestamp(), result.getText())
+    } else {
+        format!("({}) {}", result.getBarcodeFormat(), result)
     }
 }
