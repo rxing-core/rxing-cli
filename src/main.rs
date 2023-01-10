@@ -17,10 +17,15 @@ struct Args {
 #[derive(Subcommand)]
 enum Commands {
     Decode {
+        /// Try much harder to detect barcodes.
         #[arg(short, long)]
         try_harder: bool,
+
+        /// Search for multiple barcodes in an image instead of just one, this can be much slower.
         #[arg(short, long)]
         decode_multi: bool,
+
+        /// Can be specified multiple times with different barcode formats, only listed formats are searched for.
         #[arg(short, long, value_enum)]
         barcode_types: Option<Vec<BarcodeFormat>>,
 
@@ -93,10 +98,14 @@ enum Commands {
         width: u32,
         #[arg(long)]
         height: u32,
+        
+        /// String input for the encoder.
         #[arg(short, long)]
         data: Option<String>,
+
+        /// A file containing the text to be encoded.
         #[arg(long)]
-        data_file: Option<String>,
+        data_file: Option<PathBuf>,
 
         /// Specifies what degree of error correction to use, for example in QR Codes.
         /// Type depends on the encoder. For example for QR codes it's (L,M,Q,H).
@@ -208,7 +217,6 @@ enum Commands {
 }
 
 fn main() {
-    println!("rxing-cli");
     let cli = Args::parse();
     match &cli.command {
         Commands::Decode {
@@ -360,10 +368,10 @@ fn decode_command(
         );
     }
 
-    println!(
-        "Decode '{}' with: try_harder: {}, decode_multi: {}, barcode_types: {:?}",
-        file_name, try_harder, decode_multi, barcode_types
-    );
+    // println!(
+    //     "Decode '{}' with: try_harder: {}, decode_multi: {}, barcode_types: {:?}",
+    //     file_name, try_harder, decode_multi, barcode_types
+    // );
 
     if !try_harder {
         hints.insert(
@@ -421,7 +429,7 @@ fn encode_command(
     width: &u32,
     height: &u32,
     data: &Option<String>,
-    data_file: &Option<String>,
+    data_file: &Option<PathBuf>,
     error_correction: &Option<String>,
     character_set: &Option<String>,
     data_matrix_compact: &Option<bool>,
@@ -447,8 +455,7 @@ fn encode_command(
     //     return;
     // }
 
-    let input_data = if let Some(df) = data_file {
-        let path_from = PathBuf::from(df);
+    let input_data = if let Some(path_from) = data_file {
         if path_from.exists() {
             let Ok(fl) = std::fs::File::open(path_from) else {
                 println!("file cannot be opened");
@@ -456,7 +463,7 @@ fn encode_command(
             };
             std::io::read_to_string(fl).expect("file should read")
         } else {
-            println!("{} does not exist", df);
+            println!("{} does not exist", path_from.to_string_lossy());
             return;
         }
     } else if let Some(ds) = data {
@@ -574,7 +581,8 @@ fn encode_command(
         );
     }
 
-    println!("Encode: file_name: {}, barcode_type: {}, width: {:?}, height: {:?}, data: '{:?}', data_file: {:?}", file_name, barcode_type, width, height, data, data_file);
+    // println!("Encode: file_name: {}, barcode_type: {}, width: {:?}, height: {:?}, data: '{:?}', data_file: {:?}", file_name, barcode_type, width, height, data, data_file);
+
     let writer = MultiFormatWriter::default();
     match writer.encode_with_hints(
         &input_data,
@@ -595,9 +603,10 @@ fn encode_command(
 }
 
 fn print_result(result: &rxing::RXingResult, detailed: bool) -> String {
+    let result_data = result.getText().escape_default().collect::<String>();
     if detailed {
-        format!("[Barcode Format] {}\n[Metadata] {:?}\n[Points] {:?}\n[Number of Bits] {}\n[Timestamp] {}\n[Data] {}", result.getBarcodeFormat(),result.getRXingResultMetadata(), result.getRXingResultPoints(), result.getNumBits(), result.getTimestamp(), result.getText())
+        format!("[Barcode Format] {}\n[Metadata] {:?}\n[Points] {:?}\n[Number of Bits] {}\n[Timestamp] {}\n[Data] {}", result.getBarcodeFormat(),result.getRXingResultMetadata(), result.getRXingResultPoints(), result.getNumBits(), result.getTimestamp(), result_data)
     } else {
-        format!("({}) {}", result.getBarcodeFormat(), result)
+        format!("({}) {}", result.getBarcodeFormat(), result_data)
     }
 }

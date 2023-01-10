@@ -3,6 +3,8 @@ A command line interface for rxing supporting encoding and decoding of barcode d
 
 ## Full documentation
 `rxing-cli help`
+`rxing-cli help encode`
+`rxing-cli help decode`
 
 ## Instalation 
 `cargo install rxing-cli`
@@ -14,4 +16,4 @@ A command line interface for rxing supporting encoding and decoding of barcode d
 `rxing-cli test_image.jpg decode`
 
 ## Example Multi Barcode Decode
-`rxing-cli test_image.jpg decode --decode_multi`
+`rxing-cli test_image.jpg decode --decode-multi`
