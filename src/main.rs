@@ -98,7 +98,7 @@ enum Commands {
         width: u32,
         #[arg(long)]
         height: u32,
-        
+
         /// String input for the encoder.
         #[arg(short, long)]
         data: Option<String>,
@@ -388,8 +388,19 @@ fn decode_command(
         );
     }
 
+    let path = PathBuf::from(file_name);
+    let extension = if let Some(ext) = path.extension() {
+        ext.to_string_lossy().to_string()
+    } else {
+        String::default()
+    };
+
     if *decode_multi {
-        let results = rxing::helpers::detect_multiple_in_file_with_hints(file_name, &mut hints);
+        let results = if extension == "svg" {
+            rxing::helpers::detect_multiple_in_svg_with_hints(file_name, &mut hints)
+        } else {
+            rxing::helpers::detect_multiple_in_file_with_hints(file_name, &mut hints)
+        };
         match results {
             Ok(result_array) => {
                 println!("Found {} results", result_array.len());
@@ -405,7 +416,11 @@ fn decode_command(
             }
         }
     } else {
-        let result = rxing::helpers::detect_in_file_with_hints(file_name, None, &mut hints);
+        let result = if extension == "svg" {
+            rxing::helpers::detect_in_svg_with_hints(file_name, None, &mut hints)
+        } else {
+            rxing::helpers::detect_in_file_with_hints(file_name, None, &mut hints)
+        };
         match result {
             Ok(result) => {
                 println!(
@@ -593,7 +608,7 @@ fn encode_command(
     ) {
         Ok(result) => {
             println!("Encode successful, saving...");
-            match rxing::helpers::save_image(file_name, &result) {
+            match rxing::helpers::save_file(file_name, &result) {
                 Ok(_) => println!("Saved to '{}'", file_name),
                 Err(error) => println!("Could not save '{}': {}", file_name, error),
             }
