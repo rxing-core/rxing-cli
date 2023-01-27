@@ -433,8 +433,7 @@ fn decode_command(
             }
             Err(search_err) => {
                 println!(
-                    "Error while attempting to locate multiple barcodes in '{}': {}",
-                    file_name, search_err
+                    "Error while attempting to locate multiple barcodes in '{file_name}': {search_err}"
                 );
             }
         }
@@ -453,8 +452,7 @@ fn decode_command(
             }
             Err(search_err) => {
                 println!(
-                    "Error while attempting to locate barcode in '{}': {}",
-                    file_name, search_err
+                    "Error while attempting to locate barcode in '{file_name}': {search_err}"
                 );
             }
         }
@@ -632,11 +630,11 @@ fn encode_command(
         Ok(result) => {
             println!("Encode successful, saving...");
             match rxing::helpers::save_file(file_name, &result) {
-                Ok(_) => println!("Saved to '{}'", file_name),
-                Err(error) => println!("Could not save '{}': {}", file_name, error),
+                Ok(_) => println!("Saved to '{file_name}'"),
+                Err(error) => println!("Could not save '{file_name}': {error}"),
             }
         }
-        Err(encode_error) => println!("Couldn't encode: {}", encode_error),
+        Err(encode_error) => println!("Couldn't encode: {encode_error}"),
     }
 }
 
