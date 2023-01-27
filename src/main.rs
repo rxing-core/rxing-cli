@@ -16,6 +16,11 @@ struct Args {
 
 #[derive(Subcommand)]
 enum Commands {
+    #[command(group(
+        ArgGroup::new("advanced_display_group")
+        .required(false)
+        .args(["detailed_results","parsed_results","raw_bytes"]),
+    ))]
     Decode {
         /// Try much harder to detect barcodes.
         #[arg(short, long)]
@@ -32,6 +37,14 @@ enum Commands {
         /// Print detailed results data
         #[arg(long)]
         detailed_results: bool,
+
+        /// Print parsed results (exclusive with --detailed-results and --raw-bytes)
+        #[arg(long)]
+        parsed_results: bool,
+
+        /// Print raw bytes (exclusive with --detailed-results and --raw-bytes)
+        #[arg(long)]
+        raw_bytes: bool,
 
         /// Unspecified, application-specific hint.
         #[arg(long)]
@@ -233,6 +246,8 @@ fn main() {
             allowed_ean_extensions,
             also_inverted,
             detailed_results,
+            parsed_results,
+            raw_bytes,
         } => decode_command(
             &cli.file_name,
             try_harder,
@@ -248,6 +263,8 @@ fn main() {
             allowed_ean_extensions,
             also_inverted,
             detailed_results,
+            parsed_results,
+            raw_bytes,
         ),
         Commands::Encode {
             barcode_type,
@@ -311,6 +328,8 @@ fn decode_command(
     allowed_ean_extensions: &Option<Vec<u32>>,
     also_inverted: &Option<bool>,
     detailed_result: &bool,
+    parsed_bytes: &bool,
+    raw_bytes: &bool,
 ) {
     let mut hints: rxing::DecodingHintDictionary = HashMap::new();
     if let Some(other) = other {
@@ -405,7 +424,11 @@ fn decode_command(
             Ok(result_array) => {
                 println!("Found {} results", result_array.len());
                 for (i, result) in result_array.into_iter().enumerate() {
-                    println!("Result {}:\n{}", i, print_result(&result, *detailed_result));
+                    println!(
+                        "Result {}:\n{}",
+                        i,
+                        print_result(&result, *detailed_result, *raw_bytes, *parsed_bytes)
+                    );
                 }
             }
             Err(search_err) => {
@@ -425,7 +448,7 @@ fn decode_command(
             Ok(result) => {
                 println!(
                     "Detection result: \n{}",
-                    print_result(&result, *detailed_result)
+                    print_result(&result, *detailed_result, *raw_bytes, *parsed_bytes)
                 );
             }
             Err(search_err) => {
@@ -617,10 +640,18 @@ fn encode_command(
     }
 }
 
-fn print_result(result: &rxing::RXingResult, detailed: bool) -> String {
+fn print_result(result: &rxing::RXingResult, detailed: bool, raw: bool, parsed: bool) -> String {
     let result_data = result.getText().escape_default().collect::<String>();
     if detailed {
         format!("[Barcode Format] {}\n[Metadata] {:?}\n[Points] {:?}\n[Number of Bits] {}\n[Timestamp] {}\n[Data] {}", result.getBarcodeFormat(),result.getRXingResultMetadata(), result.getRXingResultPoints(), result.getNumBits(), result.getTimestamp(), result_data)
+    } else if raw {
+        result
+            .getRawBytes()
+            .iter()
+            .fold(String::from(""), |acc, b| acc + " " + &b.to_string())
+    } else if parsed {
+        let parsed_data = rxing::client::result::parseRXingResult(result);
+        parsed_data.to_string()
     } else {
         format!("({}) {}", result.getBarcodeFormat(), result_data)
     }
