@@ -19,5 +19,7 @@ Cargo.lock
 *.png
 *.tif
 *.svg
+*.webp
+*.tiff
 .DS_Store
 /.vscode
