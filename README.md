@@ -1,3 +1,6 @@
+# Archive
+This repository will be archived, the functionality is being moved into the [rxing repository workspace](https://github.com/rxing-core/rxing), the crate will be managed from within that repository, the procedure to use it will not chnage.
+
 # rxing-cli
 A command line interface for rxing supporting encoding and decoding of barcode data.
 
